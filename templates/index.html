@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 학습도우미</title>
+    
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        svg: {
+          fontCache: 'global'
+        }
+      };
+    </script>
+
+    <style>
+        :root {
+            --color-bg: #f8f9fa;
+            --color-main: #ffffff;
+            --color-border: #dee2e6;
+            --color-text: #212529;
+            --color-text-light: #6c757d;
+            --color-primary: #007bff;
+            --color-primary-hover: #0056b3;
+            --color-danger: #dc3545;
+            --color-danger-hover: #a71d2a;
+            --color-info: #17a2b8;
+            --color-info-hover: #117a8b;
+            --color-success: #28a745;
+            --color-success-hover: #218838;
+            --color-warning: #ffc107;
+            --color-warning-hover: #e0a800;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            height: calc(100vh - 40px);
+            transition: grid-template-columns 0.3s ease-in-out;
+        }
+        /* [!! ★★★ 신규 ★★★ !!] 로그아웃 상태일 때 메인 숨기기 */
+        .container.logged-out {
+            grid-template-columns: 280px;
+            justify-content: center;
+        }
+        .container.logged-out .main-content,
+        .container.logged-out .sidebar-right {
+            display: none;
+        }
+        
+        aside, .main-content {
+            background-color: var(--color-main);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100%;
+            box-sizing: border-box; 
+            display: flex;
+            flex-direction: column;
+            transition: padding 0.3s ease-in-out;
+        }
+        
+        /* === 사이드바 (기록, 파일) === */
+        aside h2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+        aside h3 {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: var(--color-text-light);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        aside ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto; 
+            max-height: 180px; 
+            flex-shrink: 0; 
+        }
+        ul#odapnote-list, ul#mindmap-list {
+            max-height: 200px; 
+        }
+        aside li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            word-break: break-all;
+        }
+        aside li:hover {
+            background-color: var(--color-bg);
+        }
+        aside a {
+            color: var(--color-primary);
+            text-decoration: none;
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        aside a:hover {
+            text-decoration: underline;
+        }
+        .btn-delete {
+            background-color: transparent;
+            border: none;
+            color: var(--color-danger);
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 50%;
+            line-height: 1;
+            flex-shrink: 0; 
+        }
+        .btn-delete:hover {
+            background-color: #fbebee;
+        }
+
+        /* 체크박스 & OCR 버튼 스타일 */
+        .file-checkbox {
+            margin-right: 5px;
+            flex-shrink: 0; 
+        }
+        .btn-run-ocr {
+            font-size: 0.8em;
+            padding: 2px 5px;
+            margin: 0 5px;
+            flex-shrink: 0;
+            background-color: var(--color-info);
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-run-ocr:hover {
+            background-color: var(--color-info-hover);
+        }
+        .btn-run-ocr:disabled {
+            background-color: var(--color-text-light);
+            cursor: not-allowed;
+        }
+        .ocr-status {
+            font-size: 0.8em;
+            color: var(--color-success);
+            margin: 0 5px;
+            flex-shrink: 0;
+            cursor: default;
+        }
+        
+        #fileList li span {
+            cursor: pointer;
+            flex-grow: 1; 
+            margin-right: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; 
+        }
+        #fileList li span:hover {
+            color: var(--color-primary);
+            text-decoration: underline;
+        }
+
+
+        .button-group-sidebar {
+            display: flex;
+            flex-direction: column; 
+            gap: 10px;
+            margin-bottom: 20px; 
+            padding-bottom: 20px; 
+            border-bottom: 1px dashed var(--color-border);
+        }
+        .button-group-sidebar button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: white;
+            background-color: var(--color-info); 
+        }
+        .button-group-sidebar button:hover {
+            background-color: var(--color-info-hover);
+        }
+        .button-group-sidebar button[value="analyze_weakness"] {
+            background-color: var(--color-warning);
+            color: #212529;
+        }
+        .button-group-sidebar button[value="analyze_weakness"]:hover {
+            background-color: var(--color-warning-hover);
+        }
+        .button-group-sidebar button[value="quiz_weakness"] {
+            background-color: var(--color-warning);
+            color: #212529;
+        }
+        .button-group-sidebar button[value="quiz_weakness"]:hover {
+            background-color: var(--color-warning-hover);
+        }
+        .button-group-sidebar button[value="quiz_selected"] {
+            background-color: var(--color-success);
+        }
+        .button-group-sidebar button[value="quiz_selected"]:hover {
+            background-color: var(--color-success-hover);
+        }
+
+        .btn-toggle {
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .btn-toggle:hover {
+            background: #e9ecef;
+        }
+
+
+        /* === 파일 업로드 폼 === */
+        #uploadForm {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--color-border);
+        }
+        #uploadForm input[type="file"] {
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        #uploadForm button {
+            width: 100%;
+            background-color: var(--color-primary);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #uploadForm button:hover {
+            background-color: var(--color-primary-hover);
+        }
+        #uploadStatus {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* === 메인 콘텐츠 === */
+        .main-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content h1 {
+            margin-top: 0;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative; 
+        }
+        #toggle-fullscreen {
+            position: absolute;
+            right: 0;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            background-color: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #toggle-fullscreen:hover {
+            background-color: #e9ecef;
+        }
+
+        #responseSection {
+            flex-grow: 1; 
+            overflow-y: auto; 
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 15px;
+            background-color: var(--color-bg);
+            margin-bottom: 20px;
+            min-height: 200px;
+        }
+        #response {
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+        
+        #questionForm { 
+            display: flex;
+            flex-direction: column;
+        }
+        #questionForm label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        #questionForm textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--color-border);
+            font-size: 1rem;
+            font-family: inherit;
+            box-sizing: border-box; 
+            resize: vertical;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .button-group button {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+        }
+        .button-group button[value="ask"] {
+            background-color: var(--color-primary);
+        }
+        .button-group button[value="ask"]:hover {
+            background-color: var(--color-primary-hover);
+        }
+        
+        /* [!! ★★★ 롤백 ★★★ !!] 'quiz_context' -> 'quiz_file' */
+        .button-group button[value="extract_answer"],
+        .button-group button[value="quiz_file"] {
+            background-color: #6c757d;
+        }
+        .button-group button[value="extract_answer"]:hover,
+        .button-group button[value="quiz_file"]:hover {
+            background-color: #5a6268;
+        }
+
+        .button-group button[value="grade_quiz"] {
+            background-color: var(--color-success);
+        }
+        .button-group button[value="grade_quiz"]:hover {
+            background-color: var(--color-success-hover);
+        }
+        
+
+        /* [유지] 사이드바 접기 CSS (50px) */
+        body.left-collapsed .container {
+            grid-template-columns: 50px 1fr 280px; 
+        }
+        body.left-collapsed .sidebar-left {
+            padding: 10px 5px; 
+            overflow-y: hidden; 
+        }
+        body.left-collapsed .sidebar-left > h3,
+        body.left-collapsed .sidebar-left > ul,
+        body.left-collapsed .sidebar-left > .button-group-sidebar {
+            display: none;
+        }
+        /* [!! ★★★ 수정 ★★★ !!] 로그인 폼도 접기 */
+        body.left-collapsed .sidebar-left > #auth-section {
+            display: none;
+        }
+        body.left-collapsed .sidebar-left h2 {
+            justify-content: center; 
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        body.left-collapsed .sidebar-left h2 span {
+            display: none; 
+        }
+
+        body.right-collapsed .container {
+            grid-template-columns: 280px 1fr 50px; 
+        }
+        body.right-collapsed .sidebar-right {
+            padding: 10px 5px;
+            overflow-y: hidden;
+        }
+        body.right-collapsed .sidebar-right > h3,
+        body.right-collapsed .sidebar-right > ul,
+        body.right-collapsed .sidebar-right > .button-group-sidebar,
+        body.right-collapsed .sidebar-right > #uploadForm {
+            display: none;
+        }
+        body.right-collapsed .sidebar-right h2 {
+            justify-content: center;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        body.right-collapsed .sidebar-right h2 span {
+            display: none; 
+        }
+
+        body.left-collapsed.right-collapsed .container {
+            grid-template-columns: 50px 1fr 50px;
+        }
+
+        body.fullscreen-mode .container {
+            grid-template-columns: 1fr; 
+            gap: 0;
+        }
+        body.fullscreen-mode .sidebar-left,
+        body.fullscreen-mode .sidebar-right {
+            display: none; 
+        }
+        body.fullscreen-mode .main-content {
+            grid-column: 1 / -1; 
+        }
+
+        /* [!! ★★★ 삭제 ★★★ !!] 마인드맵 모달 CSS 모두 삭제 */
+
+        /* [!! 신규 !!] 플로팅 채팅 위젯 스타일 */
+        #floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--color-primary);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+        #floating-btn:hover {
+            transform: scale(1.1);
+            background-color: var(--color-primary-hover);
+        }
+        
+        #floating-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            background-color: white;
+            border: 1px solid var(--color-border);
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: none; /* 기본적으로 숨김 */
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .floating-header {
+            background-color: var(--color-primary);
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .floating-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .floating-body {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f1f3f5;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .floating-input-area {
+            padding: 10px;
+            border-top: 1px solid var(--color-border);
+            background-color: white;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .floating-input-area input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            outline: none;
+        }
+        
+        .floating-input-area button {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 플로팅 채팅 메시지 스타일 */
+        .f-msg {
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 85%;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+        .f-user {
+            background-color: var(--color-primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+        .f-bot {
+            background-color: white;
+            color: var(--color-text);
+            border: 1px solid #ddd;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+    </style>
+    
+</head>
+<body>
+    
+    <div class="container {% if not current_user %}logged-out{% endif %}">
+        <aside class="sidebar-left">
+
+            <div id="auth-section" style="border-bottom: 2px solid var(--color-border); padding-bottom: 15px; margin-bottom: 15px;">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div style="color: red; font-size: 0.9em; margin-bottom: 10px; background-color: #fff0f0; border: 1px solid red; padding: 8px; border-radius: 4px;">
+                            {{ messages[0] }}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if current_user %}
+                    <div style="padding: 10px; text-align: center;">
+                        <strong>{{ current_user }}</strong>님<br>환영합니다!
+                        <a href="/logout" style="display: block; margin-top: 10px; font-size: 0.9em;">(로그아웃)</a>
+                    </div>
+                {% else %}
+                    <form action="/login_folder" method="POST" id="loginForm" style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="text" name="folder_id" placeholder="폴더 ID" required style="padding: 8px; border: 1px solid var(--color-border); border-radius: 4px;">
+                        <input type="password" name="password" placeholder="비밀번호" required style="padding: 8px; border: 1px solid var(--color-border); border-radius: 4px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <button type="submit" style="padding: 8px; background-color: var(--color-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">로그인</button>
+                            <button type="submit" formaction="/create_folder" style="padding: 8px; background-color: var(--color-success); color: white; border: none; border-radius: 4px; cursor: pointer;">생성</button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+            {% if current_user %}
+            <h2>
+                <span>기록</span>
+                <button id="toggle-left" class="btn-toggle" type="button">◀</button>
+            </h2>
+            
+            <h3>질문</h3>
+            <ul id="ask-list">
+                {% for item in ask_list %} <li>
+                        <a href="/?cache_key={{ item.key | urlencode }}" title="{{ item.value.question_text }}">{{ item.value.question_text | truncate(30) }}</a>
+                        <button type="button" class="btn-delete btn-delete-history" data-key="{{ item.key | urlencode }}" title="기록 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>기록이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <h3>요약</h3>
+            <ul id="summarize-list">
+                {% for item in summarize_list %} <li>
+                        <a href="/?cache_key={{ item.key | urlencode }}" title="{{ item.value.question_text }}">{{ item.value.question_text | truncate(30) }}</a>
+                        <button type="button" class="btn-delete btn-delete-history" data-key="{{ item.key | urlencode }}" title="기록 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>요약 기록이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <h3>퀴즈</h3>
+            <ul id="quiz-list">
+                {% for item in quiz_list %} <li>
+                        <a href="/?cache_key={{ item.key | urlencode }}" title="{{ item.value.question_text }}">{{ item.value.question_text | truncate(30) }}</a>
+                        <button type="button" class="btn-delete btn-delete-history" data-key="{{ item.key | urlencode }}" title="기록 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>퀴즈 기록이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <h3>마인드맵</h3>
+            <ul id="mindmap-list">
+                {% for item in mindmap_list %} <li>
+                        <a href="/?cache_key={{ item.key | urlencode }}" title="{{ item.value.question_text }}">{{ item.value.question_text | truncate(30) }}</a>
+                        <button type="button" class="btn-delete btn-delete-history" data-key="{{ item.key | urlencode }}" title="기록 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>마인드맵 기록이 없습니다.</li>
+                {% endfor %}
+            </ul>
+            <h3>오답노트</h3>
+            <div class="button-group-sidebar" style="border-bottom: 0; margin-bottom: 10px; padding-bottom: 0;">
+                <button type="button" id="btn_analyze_weakness" value="analyze_weakness">
+                    [오답] 취약점 분석
+                </button>
+                <button type="button" id="btn_quiz_weakness" value="quiz_weakness">
+                    [오답] 약점 퀴즈
+                </button>
+            </div>
+            
+            <ul id="odapnote-list">
+                {% for item in odapnote_list %}
+                    <li>
+                        <a href="/?odap_key={{ loop.index0 }}" title="{{ item.timestamp }} 오답">{{ item.timestamp }} 오답</a>
+                        <button type="button" class="btn-delete btn-delete-odap" data-key="{{ loop.index0 }}" title="오답 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>오답노트가 비었습니다.</li>
+                {% endfor %}
+            </ul>
+            {% endif %} </aside>
+
+        <main class="main-content">
+            <h1>
+                나만의 AI 학습도우미 에이터
+                <button id="toggle-fullscreen" type="button">전체화면</button>
+            </h1>
+            
+            <div id="responseSection">
+                <h3>{% if question_text %}{% else %}환영합니다!{% endif %}</h3>
+                <div id="response">
+                    {% if answer %}
+                        {{ answer | safe }}
+                    {% else %}
+                        {% if current_user %}
+                            (답변이 여기에 표시됩니다.)
+                        {% else %}
+                            왼쪽 폼에서 [폴더 ID]와 [비밀번호]를 입력하여
+                            로그인하거나 새 폴더를 생성해주세요.
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if current_user %}
+            <form id="questionForm" method="POST" action="/load_main_page">
+                <label for="query">질문하기 (또는 답안 입력):</label>
+                <textarea id="query" name="query" placeholder="여기에 질문을 입력하세요...">{{ question_text or '' }}</textarea>
+                
+                <input type="hidden" id="previous_answer" name="previous_answer">
+                
+                <div class="button-group">
+                    <button type="submit" name="action" value="ask">질문하기</button>
+                    <button type="submit" name="action" value="extract_answer">
+                        [답변] 핵심 추출
+                    </button>
+                    <button type="submit" name="action" value="quiz_file">
+                        [파일] 퀴즈내기
+                    </button>
+                    <button type="submit" name="action" value="grade_quiz">
+                        [답안] 제출/채점
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </main>
+
+        <aside class="sidebar-right">
+            <h2>
+                <span>자료 관리</span>
+                <button id="toggle-right" class="btn-toggle" type="button">▶</button>
+            </h2>
+
+            {% if current_user %}
+            <h3>전체 자료 기능</h3>
+            <div class="button-group-sidebar">
+                <button type="button" id="btn_extract_all" value="extract_all">
+                    [전체] 핵심 추출
+                </button>
+                <button type="button" id="btn_quiz_all" value="quiz_all">
+                    [전체] 퀴즈내기
+                </button>
+            </div>
+            
+            <h3>선택 자료 기능</h3>
+            <div class="button-group-sidebar">
+                <button type="button" id="btn_quiz_selected" value="quiz_selected">
+                    [선택] 퀴즈내기
+                </button>
+                <button type="button" id="btn_correlation" value="generate_correlation_analysis" style="background-color: #6f42c1;">
+                    [선택] 연관 분석
+                </button>
+            </div>
+
+            <h3>업로드된 파일</h3>
+            <ul id="fileList">
+                {% for file in supported_files %}
+                    <li>
+                        <input type="checkbox" class="file-checkbox" name="selected_files" value="{{ file }}">
+                        <span title="{{ file }}">{{ file }}</span>
+                        
+                        {% if file in ocr_cache_keys %}
+                            <span class="ocr-status" title="OCR 완료">✅</span>
+                        {% else %}
+                            <button type="button" class="btn-run-ocr" data-filename="{{ file }}" title="이 파일 OCR 실행">OCR</button>
+                        {% endif %}
+                        
+                        <button type="button" class="btn-delete btn-delete-file" data-filename="{{ file }}" title="파일 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>업로드된 파일이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <form id="uploadForm" enctype="multipart/form-data">
+                <h3>새 자료 업로드</h3>
+                <input type="file" id="file" name="file" accept=".pdf,.pptx,.png,.jpg,.jpeg,.txt,.xlsx" required>
+                <button type="submit">업로드</button>
+                <div id="uploadStatus"></div>
+            </form>
+            {% endif %} </aside>
+    </div>
+    
+    {% if current_user %}
+    <button id="floating-btn" title="보조 질문창 열기">💬</button>
+    <div id="floating-window">
+        <div class="floating-header">
+            <span>간단 질문</span>
+            <button class="floating-close" id="floating-close">&times;</button>
+        </div>
+        <div class="floating-body" id="floating-body">
+            <div class="f-msg f-bot">무엇을 도와드릴까요? (메인 화면과 맥락을 공유합니다)</div>
+        </div>
+        <div class="floating-input-area">
+            <input type="text" id="floating-input" placeholder="질문 입력...">
+            <button id="floating-send">➤</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        // [!! ★★★ 수정 ★★★ !!]
+        // DOMContentLoaded로 모든 스크립트를 감쌉니다.
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // 로그인 상태 확인 (Jinja2에서 템플릿으로 변수 주입)
+            // (수정) Jinja2 변수를 linter가 인식할 수 있는 JSON.parse()로 감싸고,
+// current_user의 존재 여부에 따라 true/false를 명확히 전달합니다.
+const IS_LOGGED_IN = JSON.parse('{{ current_user is not none | tojson }}');
+
+            // === [헬퍼 함수] API 호출 후 메인 화면 갱신 ===
+            function updateMainContent(data) {
+                if (data.success && data.status === 'complete') {
+                    document.querySelector('#responseSection h3').textContent = `질문: ${data.question_text}`;
+                    document.getElementById('response').innerHTML = data.answer;
+
+                    // [!! ★★★ 핵심 수정 ★★★ !!]
+                    // 사이드바 기능으로 로드된 답변도 'previous_answer' hidden input에 저장합니다.
+                    const prevAnswerInput = document.getElementById('previous_answer');
+                    if(prevAnswerInput) {
+                        prevAnswerInput.value = data.answer;
+                    }
+
+                    // (2단계) 페이지 새로고침 없이 사이드바도 갱신
+                } else { // [!! ★★★ 수정 ★★★ !!] else 구문은 if 블록 밖에 있어야 합니다.
+                    alert("작업 실패: " + data.error);
+                }
+            }
+            
+            // === [플로팅 위젯 로직] ===
+            const floatingBtn = document.getElementById('floating-btn');
+            const floatingWindow = document.getElementById('floating-window');
+            const floatingClose = document.getElementById('floating-close');
+            const floatingInput = document.getElementById('floating-input');
+            const floatingSend = document.getElementById('floating-send');
+            const floatingBody = document.getElementById('floating-body');
+
+            if (floatingBtn) {
+                floatingBtn.addEventListener('click', () => {
+                    floatingWindow.style.display = 'flex';
+                    floatingBtn.style.display = 'none';
+                    if(floatingInput) floatingInput.focus();
+                });
+            }
+            if (floatingClose) {
+                floatingClose.addEventListener('click', () => {
+                    floatingWindow.style.display = 'none';
+                    floatingBtn.style.display = 'flex';
+                });
+            }
+
+            async function sendFloatingMessage() {
+                const query = floatingInput.value.trim();
+                if (!query) return;
+
+                const userDiv = document.createElement('div');
+                userDiv.className = 'f-msg f-user';
+                userDiv.textContent = query;
+                floatingBody.appendChild(userDiv);
+                floatingBody.scrollTop = floatingBody.scrollHeight;
+                floatingInput.value = "";
+
+                const botDiv = document.createElement('div');
+                botDiv.className = 'f-msg f-bot';
+                botDiv.textContent = "...";
+                floatingBody.appendChild(botDiv);
+                floatingBody.scrollTop = floatingBody.scrollHeight;
+
+                try {
+                    // [!! ★★★ 추가 ★★★ !!] 메인 답변 창의 현재 내용을 가져옵니다.
+                    const mainResponseHTML = document.getElementById('response').innerHTML.trim();
+                    
+                    const response = await fetch('/stream_ask', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ 
+                            query: query,
+                            source: 'floating_widget',
+                            previous_answer: mainResponseHTML // [!! ★★★ 추가 ★★★ !!]
+                        })
+                    });
+
+                    if (!response.ok) throw new Error("Network error");
+
+                    botDiv.textContent = ""; 
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        const chunk = decoder.decode(value, {stream: true});
+                        botDiv.innerHTML += chunk;
+                        floatingBody.scrollTop = floatingBody.scrollHeight;
+                    }
+                    
+                } catch (error) {
+                    botDiv.textContent = "오류 발생: " + error.message;
+                    botDiv.style.color = "red";
+                }
+            }
+
+            if (floatingSend) floatingSend.addEventListener('click', sendFloatingMessage);
+            if (floatingInput) floatingInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendFloatingMessage(); // [!! ★★★ 괄호() 추가 ★★★ !!]
+            });
+
+            // === [메인 폼 로직] ===
+            const questionForm = document.getElementById('questionForm');
+            const responseDiv = document.getElementById('response');
+            const queryTextarea = document.getElementById('query');
+            const responseSection = document.getElementById('responseSection');
+            const uploadForm = document.getElementById('uploadForm');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const toggleLeftBtn = document.getElementById('toggle-left');
+            const toggleRightBtn = document.getElementById('toggle-right');
+            const toggleFullscreenBtn = document.getElementById('toggle-fullscreen');
+            const body = document.body;
+
+            if (responseSection) {
+                responseSection.scrollTop = responseSection.scrollHeight;
+            }
+
+            // [!! ★★★ 롤백 + 수정 ★★★ !!] 
+            // '질문하기' 버튼은 'previous_answer'를 비우고,
+            // '그 외' 버튼은 'previous_answer'를 채웁니다.
+            document.querySelectorAll('button[type="submit"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    // '질문하기' 버튼을 누른 경우, 맥락(previous_answer)을 지웁니다.
+                    if (this.value === 'ask') {
+                        const prevAnswerInput = document.getElementById('previous_answer');
+                        if (prevAnswerInput) {
+                            prevAnswerInput.value = ""; // [!! ★★★ 수정 ★★★ !!]
+                        }
+                    } 
+                    // '질문하기'가 아닌 다른 버튼(채점 등)은 현재 내용을 맥락으로 사용합니다.
+                    else if (responseDiv) {
+                        let currentAnswerHTML = responseDiv.innerHTML.trim();
+                        if (currentAnswerHTML === '(답변이 여기에 표시됩니다.)') {
+                            currentAnswerHTML = "";
+                        }
+                        const prevAnswerInput = document.getElementById('previous_answer');
+                        if(prevAnswerInput) {
+                            prevAnswerInput.value = currentAnswerHTML;
+                        }
+                    }
+                });
+            });
+
+            if (questionForm) {
+                questionForm.addEventListener('submit', async function(event) {
+                    const action = document.activeElement ? document.activeElement.value : '';
+                    if (!action) return; 
+
+                    if (action === 'ask') {
+                        // '질문하기' (스트리밍)
+                        event.preventDefault(); 
+                        const query = queryTextarea.value;
+                        const previousAnswer = document.getElementById('previous_answer').value; // [!! ★★★ 수정 ★★★ !!] 'ask' 클릭 시 이 값은 비어있게 됨
+
+                        document.querySelector('#responseSection h3').textContent = `질문: ${query}`;
+                        responseDiv.innerHTML = "답변 생성 중... (스트리밍)";
+                        queryTextarea.disabled = true;
+                        document.querySelector('button[value="ask"]').disabled = true;
+
+                        try {
+                            const response = await fetch('/stream_ask', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({
+                                    query: query,
+                                    previous_answer: previousAnswer, // [!! ★★★ 수정 ★★★ !!] 'ask'의 경우 빈 문자열("") 전송
+                                    source: 'main_form' // [!! ★★★ 추가 ★★★ !!]
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP 오류! 상태: ${response.status}`);
+                            }
+
+                            responseDiv.innerHTML = ""; 
+                            const reader = response.body.getReader();
+                            const decoder = new TextDecoder('utf-8');
+                            
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+                                const chunk = decoder.decode(value, {stream: true});
+                                responseDiv.innerHTML += chunk; 
+                                if(responseSection) responseSection.scrollTop = responseSection.scrollHeight;
+                            }
+                            
+                            // [!! ★★★ 추가 ★★★ !!]
+                            // 스트리밍 완료 후, 이 답변을 'previous_answer'에 저장
+                            const prevAnswerInput = document.getElementById('previous_answer');
+                            if(prevAnswerInput) {
+                                prevAnswerInput.value = responseDiv.innerHTML;
+                            }
+                            
+                            // (2단계) 스트리밍 완료 후 사이드바 갱신
+                            // location.reload(); 
+
+                        } catch (error) {
+                            responseDiv.innerHTML = `❌ 스트리밍 처리 중 오류: ${error}`;
+                        } finally {
+                            queryTextarea.disabled = false; 
+                            document.querySelector('button[value="ask"]').disabled = false;
+                        }
+                    
+                    } else if (action === 'grade_quiz') {
+                        // '채점하기' (비동기)
+                        event.preventDefault();
+                        const btn = document.querySelector('button[value="grade_quiz"]');
+                        btn.textContent = "채점 중...";
+                        btn.disabled = true;
+                        
+                        fetch('/grade_quiz', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                query: queryTextarea.value,
+                                previous_answer: document.getElementById('previous_answer').value
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => updateMainContent(data)) // 공통 함수로 결과 처리
+                        .catch(err => alert('네트워크 오류: ' + err))
+                        .finally(() => {
+                            btn.textContent = "[답안] 제출/채점";
+                            btn.disabled = false;
+                        });
+
+                    } else {
+                        // '답변 핵심 추출', '[파일] 퀴즈내기' (동기)
+                        // (2단계에서 이 로직도 fetch로 변경)
+                        // 1단계에서는 기존 폼 제출 방식을 유지
+                    }
+                });
+            }
+
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); 
+                    const fileInput = document.getElementById('file');
+                    if (!fileInput || fileInput.files.length === 0) {
+                        uploadStatus.textContent = "파일을 선택하세요.";
+                        uploadStatus.style.color = "red";
+                        return;
+                    }
+                    const formData = new FormData(this);
+                    uploadStatus.textContent = "업로드 중...";
+                    uploadStatus.style.color = "blue";
+
+                    fetch('/upload', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            uploadStatus.textContent = `'${data.filename}' 업로드 성공!`;
+                            uploadStatus.style.color = "green";
+                            setTimeout(() => location.reload(), 1000); // (2단계) 부분 갱신으로 변경
+                        } else {
+                            uploadStatus.textContent = `업로드 실패: ${data.error}`;
+                            uploadStatus.style.color = "red";
+                        }
+                    })
+                    .catch(error => {
+                        uploadStatus.textContent = `네트워크 오류: ${error}`;
+                        uploadStatus.style.color = "red";
+                    });
+                });
+            }
+
+            document.querySelectorAll('.sidebar-left a').forEach(link => {
+                link.addEventListener('click', function() {
+                    try {
+                        localStorage.setItem('collapseLeftSidebar', 'true');
+                    } catch (e) {
+                        console.warn("LocalStorage 사용 불가: " + e);
+                    }
+                });
+            });
+
+            function rebindAllEventListeners() {
+                
+                // (파일 삭제)
+                document.querySelectorAll('.btn-delete-file').forEach(button => {
+                    if (button.dataset.listenerAdded) return;
+                    button.dataset.listenerAdded = 'true';
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const filename = this.dataset.filename;
+                        if(!confirm(`'${filename}' 삭제? (OCR 캐시도 삭제됨)`)) return;
+                        
+                        fetch('/delete_file', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({filename: filename})
+                        }).then(res=>res.json()).then(data=>{
+                            if(data.success) {
+                                this.parentElement.remove();
+                                // (2단계) all_file_text 갱신
+                            } else {
+                                alert("삭제 실패: " + data.error);
+                            }
+                        });
+                    });
+                });
+
+                // (기록 삭제)
+                document.querySelectorAll('.btn-delete-history').forEach(btn => {
+                    if(btn.dataset.listenerAdded) return;
+                    btn.dataset.listenerAdded='true';
+                    btn.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const key = this.dataset.key;
+                        if(!confirm("기록 삭제?")) return;
+                        fetch('/delete_history', {
+                            method:'POST', headers:{'Content-Type':'application/json'},
+                            body:JSON.stringify({key:key})
+                        }).then(r=>r.json()).then(d=>{
+                            if(d.success) this.parentElement.remove();
+                        });
+                    });
+                });
+
+                // (오답노트 삭제)
+                document.querySelectorAll('.btn-delete-odap').forEach(btn => {
+                    if(btn.dataset.listenerAdded) return;
+                    btn.dataset.listenerAdded='true';
+                    btn.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const key = this.dataset.key;
+                        if(!confirm("오답 삭제?")) return;
+                        fetch('/delete_odapnote', {
+                            method:'POST', headers:{'Content-Type':'application/json'},
+                            body:JSON.stringify({key:key})
+                        }).then(r=>r.json()).then(d=>{
+                            if(d.success) this.parentElement.remove();
+                        });
+                    });
+                });
+
+                // (파일 클릭)
+                document.querySelectorAll('#fileList li span').forEach(span => {
+                    if(span.dataset.listenerAdded) return;
+                    span.dataset.listenerAdded='true';
+                    span.addEventListener('click', function(){
+                        if(queryTextarea) {
+                            queryTextarea.value += this.textContent.trim() + " ";
+                            queryTextarea.focus();
+                        }
+                    });
+                });
+
+                // [!! 신규 !!] OCR 버튼 클릭
+                document.querySelectorAll('.btn-run-ocr').forEach(button => {
+                    if (button.dataset.listenerAdded) return;
+                    button.dataset.listenerAdded = 'true';
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault(); 
+                        const filename = this.dataset.filename;
+                        this.textContent = "처리중...";
+                        this.disabled = true;
+
+                        fetch('/run_ocr', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ filename: filename }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(`'${filename}'의 OCR 처리를 백그라운드에서 시작했습니다.\n완료되면 새로고침 시 '✅'로 표시됩니다.`);
+                            } else {
+                                alert(`OCR 시작 실패: ${data.error}`);
+                                this.textContent = "OCR";
+                                this.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            alert(`네트워크 오류: ${error}`);
+                            this.textContent = "OCR";
+                            this.disabled = false;
+                        });
+                    });
+                });
+            }
+            
+            rebindAllEventListeners();
+
+            // [!! ★★★ 폼 버그 수정 -> API 호출 방식으로 변경 ★★★ !!]
+            
+            // (1) 퀴즈/분석 작업 공통 호출 함수
+            function submitQuizJob(action, data = {}) {
+                const btn = document.getElementById(`btn_${action}`);
+                if (btn) {
+                    btn.textContent = "요청 중...";
+                    btn.disabled = true;
+                }
+                
+                fetch(`/run_quiz`, { // '/run_quiz' API 사용
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: action, ...data })
+                })
+                .then(res => res.json())
+                .then(data => updateMainContent(data)) // 공통 함수로 결과 처리
+                .catch(err => alert('네트워크 오류: ' + err))
+                .finally(() => {
+                    if(btn) {
+                        btn.disabled = false;
+                        // (텍스트는 원래대로 돌려야 함 - 2단계)
+                        // btn.textContent = "..."; 
+                    }
+                });
+            }
+            
+            // (2) 분석 작업 공통 호출 함수
+            function submitAnalysisJob(action, data = {}) {
+                const btn = document.getElementById(`btn_${action}`);
+                if (btn) {
+                    btn.textContent = "요청 중...";
+                    btn.disabled = true;
+                }
+                
+                fetch(`/run_analysis`, { // '/run_analysis' API 사용
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: action, ...data })
+                })
+                .then(res => res.json())
+                .then(data => updateMainContent(data)) // 공통 함수로 결과 처리
+                .catch(err => alert('네트워크 오류: ' + err))
+                .finally(() => {
+                    if(btn) {
+                        btn.disabled = false;
+                        // btn.textContent = "...";
+                    }
+                });
+            }
+
+            // (3) 사이드바 버튼 이벤트 바인딩
+            document.getElementById('btn_analyze_weakness')?.addEventListener('click', () => submitQuizJob('analyze_weakness'));
+            document.getElementById('btn_quiz_weakness')?.addEventListener('click', () => submitQuizJob('quiz_weakness'));
+            document.getElementById('btn_extract_all')?.addEventListener('click', () => submitAnalysisJob('extract_all'));
+            document.getElementById('btn_quiz_all')?.addEventListener('click', () => submitQuizJob('quiz_all'));
+            
+            document.getElementById('btn_quiz_selected')?.addEventListener('click', () => {
+                const checkedFiles = document.querySelectorAll('.file-checkbox:checked');
+                if (checkedFiles.length === 0) {
+                    alert('파일을 1개 이상 선택해주세요.');
+                    return;
+                }
+                const filenames = Array.from(checkedFiles).map(cb => cb.value);
+                submitQuizJob('quiz_selected', { selected_files: filenames });
+            });
+
+            // (4) '연관 분석' 버튼은 별도 API (비동기)
+            document.getElementById('btn_correlation')?.addEventListener('click', () => {
+                const checkedFiles = document.querySelectorAll('.file-checkbox:checked');
+                if (checkedFiles.length === 0) {
+                    alert('분석할 파일을 1개 이상 선택해주세요.');
+                    return;
+                }
+                const filenames = Array.from(checkedFiles).map(cb => cb.value);
+
+                const btnCorrelation = document.getElementById('btn_correlation');
+                btnCorrelation.textContent = "요청 중...";
+                btnCorrelation.disabled = true;
+
+                fetch('/generate_correlation_async', { // 새 API 호출
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 'selected_files': filenames })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.status === 'complete') {
+                            // [성공] 캐시 HIT, 즉시 결과 표시
+                            alert('연관 분석을 캐시에서 불러왔습니다.');
+                            updateMainContent(data); // [!! ★★★ 수정 ★★★ !!]
+                        
+                        } else if (data.status === 'processing') {
+                            // [시작] 작업이 백그라운드에서 시작됨
+                            alert(data.message);
+                        }
+                    } else {
+                        // [실패]
+                        alert("작업 실패: " + data.error);
+                    }
+                })
+                .catch(err => {
+                    alert('네트워크 오류: ' + err);
+                })
+                .finally(() => {
+                    btnCorrelation.textContent = "[선택] 연관 분석";
+                    btnCorrelation.disabled = false;
+                });
+            });
+
+
+            // 사이드바 토글
+            if (toggleLeftBtn) {
+                toggleLeftBtn.addEventListener('click', function() {
+                    body.classList.toggle('left-collapsed');
+                    toggleLeftBtn.textContent = body.classList.contains('left-collapsed') ? '▶' : '◀';
+                });
+            }
+            if (toggleRightBtn) {
+                toggleRightBtn.addEventListener('click', function() {
+                    body.classList.toggle('right-collapsed');
+                    toggleRightBtn.textContent = body.classList.contains('right-collapsed') ? '◀' : '▶';
+                });
+            }
+
+            try {
+                if (localStorage.getItem('collapseLeftSidebar') === 'true') {
+                    body.classList.add('left-collapsed');
+                    if (toggleLeftBtn) toggleLeftBtn.textContent = '▶';
+                    localStorage.removeItem('collapseLeftSidebar');
+                }
+            } catch (e) {
+                console.warn("LocalStorage 사용 불가: " + e);
+            }
+
+            // 전체화면 토글
+            if (toggleFullscreenBtn) {
+                toggleFullscreenBtn.addEventListener('click', function() {
+                    body.classList.toggle('fullscreen-mode');
+                    
+                    if (body.classList.contains('fullscreen-mode')) {
+                        toggleFullscreenBtn.textContent = '원래대로';
+                        if (body.classList.contains('left-collapsed')) {
+                            body.classList.remove('left-collapsed');
+                            if (toggleLeftBtn) toggleLeftBtn.textContent = '◀';
+                        }
+                        if (body.classList.contains('right-collapsed')) {
+                            body.classList.remove('right-collapsed');
+                            if (toggleRightBtn) toggleRightBtn.textContent = '▶';
+                        }
+                    } else {
+                        toggleFullscreenBtn.textContent = '전체화면';
+                    }
+                });
+            }
+
+        }); // End of DOMContentLoaded
+    </script>
+    
+    </body>
+</html>

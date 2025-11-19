@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 학습도우미</title>
+    <style>
+        :root {
+            --color-bg: #f8f9fa;
+            --color-main: #ffffff;
+            --color-border: #dee2e6;
+            --color-text: #212529;
+            --color-text-light: #6c757d;
+            --color-primary: #007bff;
+            --color-primary-hover: #0056b3;
+            --color-danger: #dc3545;
+            --color-danger-hover: #a71d2a;
+            --color-info: #17a2b8;
+            --color-info-hover: #117a8b;
+            --color-success: #28a745;
+            --color-success-hover: #218838;
+            /* [!! 신규 !!] 약점 분석/퀴즈 버튼 색상 */
+            --color-warning: #ffc107;
+            --color-warning-hover: #e0a800;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            height: calc(100vh - 40px);
+            transition: grid-template-columns 0.3s ease-in-out;
+        }
+        aside, .main-content {
+            background-color: var(--color-main);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100%;
+            box-sizing: border-box; 
+            display: flex;
+            flex-direction: column;
+            transition: padding 0.3s ease-in-out;
+        }
+        
+        /* === 사이드바 (기록, 파일) === */
+        aside h2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+        aside h3 {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: var(--color-text-light);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        /* '최근 5개 + 스크롤' CSS */
+        aside ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto; 
+            max-height: 180px; 
+            flex-shrink: 0; 
+        }
+        ul#odapnote-list {
+            max-height: 250px;
+        }
+        aside li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            word-break: break-all;
+        }
+        aside li:hover {
+            background-color: var(--color-bg);
+        }
+        aside a {
+            color: var(--color-primary);
+            text-decoration: none;
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        aside a:hover {
+            text-decoration: underline;
+        }
+        .btn-delete {
+            background-color: transparent;
+            border: none;
+            color: var(--color-danger);
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 50%;
+            line-height: 1;
+        }
+        .btn-delete:hover {
+            background-color: #fbebee;
+        }
+
+        #fileList li span {
+            cursor: pointer;
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        #fileList li span:hover {
+            color: var(--color-primary);
+            text-decoration: underline;
+        }
+
+        .button-group-sidebar {
+            display: flex;
+            flex-direction: column; 
+            gap: 10px;
+            margin-bottom: 20px; 
+            padding-bottom: 20px; 
+            border-bottom: 1px dashed var(--color-border);
+        }
+        .button-group-sidebar button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: white;
+            background-color: var(--color-info); 
+        }
+        .button-group-sidebar button:hover {
+            background-color: var(--color-info-hover);
+        }
+        /* [!! 신규 !!] 오답노트 버튼 스타일 */
+        .button-group-sidebar button[value="analyze_weakness"] {
+            background-color: var(--color-warning);
+            color: #212529;
+        }
+        .button-group-sidebar button[value="analyze_weakness"]:hover {
+            background-color: var(--color-warning-hover);
+        }
+        .button-group-sidebar button[value="quiz_weakness"] {
+            background-color: var(--color-warning);
+            color: #212529;
+        }
+        .button-group-sidebar button[value="quiz_weakness"]:hover {
+            background-color: var(--color-warning-hover);
+        }
+
+        .btn-toggle {
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .btn-toggle:hover {
+            background: #e9ecef;
+        }
+
+
+        /* === 파일 업로드 폼 === */
+        #uploadForm {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--color-border);
+        }
+        #uploadForm input[type="file"] {
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        #uploadForm button {
+            width: 100%;
+            background-color: var(--color-primary);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #uploadForm button:hover {
+            background-color: var(--color-primary-hover);
+        }
+        #uploadStatus {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* === 메인 콘텐츠 (질문/답변) === */
+        .main-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content h1 {
+            margin-top: 0;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative; 
+        }
+        #toggle-fullscreen {
+            position: absolute;
+            right: 0;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            background-color: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #toggle-fullscreen:hover {
+            background-color: #e9ecef;
+        }
+
+        #responseSection {
+            flex-grow: 1; 
+            overflow-y: auto; 
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 15px;
+            background-color: var(--color-bg);
+            margin-bottom: 20px;
+            min-height: 200px;
+        }
+        #response {
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+        #questionForm {
+            display: flex;
+            flex-direction: column;
+        }
+        #questionForm label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        #questionForm textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--color-border);
+            font-size: 1rem;
+            font-family: inherit;
+            box-sizing: border-box; 
+            resize: vertical;
+        }
+        /* 4버튼 2x2 그리드 */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .button-group button {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+        }
+        .button-group button[value="ask"] {
+            background-color: var(--color-primary);
+        }
+        .button-group button[value="ask"]:hover {
+            background-color: var(--color-primary-hover);
+        }
+        
+        .button-group button[value="extract_answer"],
+        .button-group button[value="quiz_file"] {
+            background-color: #6c757d;
+        }
+        .button-group button[value="extract_answer"]:hover,
+        .button-group button[value="quiz_file"]:hover {
+            background-color: #5a6268;
+        }
+
+        /* 채점 버튼 스타일 */
+        .button-group button[value="grade_quiz"] {
+            background-color: var(--color-success);
+        }
+        .button-group button[value="grade_quiz"]:hover {
+            background-color: var(--color-success-hover);
+        }
+        
+
+        /* [유지] 사이드바 접기 CSS 로직 */
+        body.left-collapsed .container {
+            grid-template-columns: 50px 1fr 280px; 
+        }
+        body.left-collapsed .sidebar-left {
+            padding: 10px 5px; 
+            overflow-y: hidden; 
+        }
+        body.left-collapsed .sidebar-left > *:not(h2) {
+            display: none; 
+        }
+        body.left-collapsed .sidebar-left h2 {
+            justify-content: center; 
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        body.left-collapsed .sidebar-left h2 span {
+            display: none; 
+        }
+
+        body.right-collapsed .container {
+            grid-template-columns: 280px 1fr 50px; 
+        }
+        body.right-collapsed .sidebar-right {
+            padding: 10px 5px;
+            overflow-y: hidden;
+        }
+        body.right-collapsed .sidebar-right > *:not(h2) {
+            display: none;
+        }
+        body.right-collapsed .sidebar-right h2 {
+            justify-content: center;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        body.right-collapsed .sidebar-right h2 span {
+            display: none; 
+        }
+
+        body.left-collapsed.right-collapsed .container {
+            grid-template-columns: 50px 1fr 50px;
+        }
+
+        /* [유지] 전체화면 모드 CSS */
+        body.fullscreen-mode .container {
+            grid-template-columns: 1fr; 
+            gap: 0;
+        }
+        body.fullscreen-mode .sidebar-left,
+        body.fullscreen-mode .sidebar-right {
+            display: none; 
+        }
+        body.fullscreen-mode .main-content {
+            grid-column: 1 / -1; 
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+    
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        svg: {
+          fontCache: 'global'
+        }
+      };
+    </script>
+    </head>
+<body>
+    
+    <div class="container">
+        <aside class="sidebar-left">
+            <h2>
+                <span>기록</span>
+                <button id="toggle-left" class="btn-toggle">◀</button>
+            </h2>
+            
+            <h3>질문</h3>
+            <ul id="ask-list">
+                {% for key, item in ask_list %}
+                    <li>
+                        <a href="/?cache_key={{ key | urlencode }}" title="{{ item.question_text }}">{{ item.question_text | truncate(30) }}</a>
+                        <button class="btn-delete btn-delete-history" data-key="{{ key | urlencode }}" title="기록 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>기록이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <h3>요약</h3>
+            <ul id="summarize-list">
+                {% for key, item in summarize_list %}
+                    <li>
+                        <a href="/?cache_key={{ key | urlencode }}" title="{{ item.question_text }}">{{ item.question_text | truncate(30) }}</a>
+                        <button class="btn-delete btn-delete-history" data-key="{{ key | urlencode }}" title="기록 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>요약 기록이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <h3>퀴즈</h3>
+            <ul id="quiz-list">
+                {% for key, item in quiz_list %}
+                    <li>
+                        <a href="/?cache_key={{ key | urlencode }}" title="{{ item.question_text }}">{{ item.question_text | truncate(30) }}</a>
+                        <button class="btn-delete btn-delete-history" data-key="{{ key | urlencode }}" title="기록 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>퀴즈 기록이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <h3>오답노트</h3>
+            <div class="button-group-sidebar" style="border-bottom: 0; margin-bottom: 10px; padding-bottom: 0;">
+                <button type="submit" form="questionForm" name="action" value="analyze_weakness">
+                    [오답] 취약점 분석
+                </button>
+                <button type="submit" form="questionForm" name="action" value="quiz_weakness">
+                    [오답] 약점 퀴즈
+                </button>
+            </div>
+            
+            <ul id="odapnote-list">
+                {% for item in odapnote_list %}
+                    <li>
+                        <a href="/?odap_key={{ loop.index0 }}" title="{{ item.timestamp }} 오답">{{ item.timestamp }} 오답</a>
+                        <button class="btn-delete btn-delete-odap" data-key="{{ loop.index0 }}" title="오답 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>오답노트가 비었습니다.</li>
+                {% endfor %}
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <h1>
+                RAG 챗봇
+                <button id="toggle-fullscreen">전체화면</button>
+            </h1>
+            
+            <div id="responseSection">
+                <h3>{% if question_text %}질문: {{ question_text }}{% else %}답변 대기 중...{% endif %}</h3>
+                <div id="response">
+                    {% if answer %}
+                        {{ answer | safe }}
+                    {% else %}
+                        (답변이 여기에 표시됩니다.)
+                    {% endif %}
+                </div>
+            </div>
+
+            <form id="questionForm" method="POST" action="/">
+                <label for="query">질문하기 (또는 답안 입력):</label>
+                <textarea id="query" name="query" placeholder="여기에 질문을 입력하세요...">{{ question_text or '' }}</textarea>
+                
+                <input type="hidden" id="previous_answer" name="previous_answer">
+                
+                <div class="button-group">
+                    <button type="submit" name="action" value="ask">질문하기</button>
+                    <button type="submit" name="action" value="extract_answer">
+                        [답변] 핵심 추출
+                    </button>
+                    <button type="submit" name="action" value="quiz_file">
+                        [파일] 퀴즈내기
+                    </button>
+                    <button type="submit" name="action" value="grade_quiz">
+                        [답안] 제출/채점
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <aside class="sidebar-right">
+            <h2>
+                <span>자료 관리</span>
+                <button id="toggle-right" class="btn-toggle">▶</button>
+            </h2>
+
+            <h3>전체 자료 기능</h3>
+            <div class="button-group-sidebar">
+                <button type="submit" form="questionForm" name="action" value="extract_all">
+                    [전체] 핵심 추출
+                </button>
+                <button type="submit" form="questionForm" name="action" value="quiz_all">
+                    [전체] 퀴즈내기
+                </button>
+            </div>
+
+            <h3>업로드된 파일</h3>
+            <ul id="fileList">
+                {% for file in supported_files %}
+                    <li>
+                        <span>{{ file }}</span>
+                        <button class="btn-delete btn-delete-file" data-filename="{{ file }}" title="파일 삭제">&times;</button>
+                    </li>
+                {% else %}
+                    <li>업로드된 파일이 없습니다.</li>
+                {% endfor %}
+            </ul>
+
+            <form id="uploadForm" enctype="multipart/form-data">
+                <h3>새 자료 업로드</h3>
+                <input type="file" id="file" name="file" accept=".pdf,.pptx,.png,.jpg,.jpeg" required>
+                <button type="submit">업로드</button>
+                <div id="uploadStatus"></div>
+            </form>
+        </aside>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // === [유지] 'previous_answer'를 채우는 JS ===
+            document.querySelectorAll('button[form="questionForm"], #questionForm .button-group button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const responseDiv = document.getElementById('response');
+                    let currentAnswerHTML = responseDiv.innerHTML.trim();
+                    if (currentAnswerHTML === '(답변이 여기에 표시됩니다.)') {
+                        currentAnswerHTML = "";
+                    }
+                    document.getElementById('previous_answer').value = currentAnswerHTML;
+                });
+            });
+
+            // === [!! 수정 !!] '질문하기' 버튼 스트리밍 처리 ===
+            const questionForm = document.getElementById('questionForm');
+            const responseDiv = document.getElementById('response');
+            const queryTextarea = document.getElementById('query');
+
+            questionForm.addEventListener('submit', async function(event) {
+                const action = document.activeElement ? document.activeElement.value : '';
+
+                if (action === 'ask') {
+                    event.preventDefault(); 
+
+                    const query = queryTextarea.value;
+                    const previousAnswer = document.getElementById('previous_answer').value;
+
+                    document.querySelector('#responseSection h3').textContent = `질문: ${query}`;
+                    responseDiv.innerHTML = "답변 생성 중... (스트리밍)";
+                    queryTextarea.disabled = true;
+                    document.querySelector('button[value="ask"]').disabled = true;
+
+                    try {
+                        const response = await fetch('/stream_ask', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                query: query,
+                                previous_answer: previousAnswer
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP 오류! 상태: ${response.status}`);
+                        }
+
+                        responseDiv.innerHTML = ""; 
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        const responseSection = document.getElementById('responseSection');
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) {
+                                break;
+                            }
+                            const chunk = decoder.decode(value, {stream: true});
+                            responseDiv.innerHTML += chunk; 
+                            responseSection.scrollTop = responseSection.scrollHeight;
+                        }
+
+                        // [!! ★★★ 핵심 수정 ★★★ !!]
+                        // 스트림이 성공적으로 끝나면, location.reload() 대신
+                        // 방금 생성된 답변의 캐시 키로 URL을 직접 변경하여 리디렉션합니다.
+                        const cache_key = query + '_ask';
+                        
+                        // 새 캐시 키로 페이지를 이동시킵니다.
+                        // (GET 요청이므로, 서버의 index() 함수가 이 키를 받아 새 답변을 렌더링합니다)
+                        window.location.href = '/?cache_key=' + encodeURIComponent(cache_key);
+                        // [!! ★★★ 수정 완료 ★★★ !!]
+
+                    } catch (error) {
+                        responseDiv.innerHTML = `❌ 스트리밍 처리 중 오류: ${error}`;
+                        // 오류 발생 시에는 버튼을 다시 활성화
+                        queryTextarea.disabled = false; 
+                        document.querySelector('button[value="ask"]').disabled = false;
+                    } 
+                    // (성공 시에는 리디렉션되므로 finally 블럭이 필요 없음)
+                }
+            });
+
+
+            // === [유지] 자료 관리 파일명 클릭 시, 질문창에 이름 복사 ===
+            document.querySelectorAll('#fileList li span').forEach(span => {
+                span.addEventListener('click', function() {
+                    const filename = this.textContent.trim();
+                    queryTextarea.value += filename + " ";
+                    queryTextarea.scrollTop = queryTextarea.scrollHeight;
+                    queryTextarea.focus();
+                });
+            });
+
+            // === [유지] 파일 업로드 처리 ===
+            const uploadForm = document.getElementById('uploadForm');
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            uploadForm.addEventListener('submit', function(event) {
+                event.preventDefault(); 
+                const fileInput = document.getElementById('file');
+                if (fileInput.files.length === 0) {
+                    uploadStatus.textContent = "파일을 선택하세요.";
+                    uploadStatus.style.color = "red";
+                    return;
+                }
+                const formData = new FormData(this);
+                uploadStatus.textContent = "업로드 및 처리 중...";
+                uploadStatus.style.color = "blue";
+                fetch('/upload', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        uploadStatus.textContent = `'${data.filename}' 업로드 성공!`;
+                        uploadStatus.style.color = "green";
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        uploadStatus.textContent = `업로드 실패: ${data.error}`;
+                        uploadStatus.style.color = "red";
+                    }
+                })
+                .catch(error => {
+                    uploadStatus.textContent = `네트워크 오류: ${error}`;
+                    uploadStatus.style.color = "red";
+                });
+            });
+
+            // === [유지] 왼쪽 사이드바 기록 클릭 시, "접기" 상태를 메모리에 저장 ===
+            document.querySelectorAll('.sidebar-left a').forEach(link => {
+                link.addEventListener('click', function() {
+                    try {
+                        localStorage.setItem('collapseLeftSidebar', 'true');
+                    } catch (e) {
+                        console.warn("LocalStorage 사용 불가: " + e);
+                    }
+                });
+            });
+
+            // === [유지] 파일 삭제 처리 ===
+            document.querySelectorAll('.btn-delete-file').forEach(button => {
+                button.addEventListener('click', function() {
+                    const filename = this.dataset.filename;
+                    if (!confirm(`'${filename}' 파일을 정말 삭제하시겠습니까?`)) {
+                        return;
+                    }
+                    fetch('/delete_file', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ filename: filename }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`'${filename}' 삭제 성공!`);
+                            this.parentElement.remove();
+                        } else {
+                            alert(`삭제 실패: ${data.error}`);
+                        }
+                    })
+                    .catch(error => alert(`네트워크 오류: ${error}`));
+                });
+            });
+
+            // === [유지] 기록 삭제 처리 ===
+            document.querySelectorAll('.btn-delete-history').forEach(button => {
+                button.addEventListener('click', function() {
+                    const key = this.dataset.key; // URL 인코딩된 상태
+                    if (!confirm(`'${decodeURIComponent(key).substring(0, 50)}...' 기록을 삭제하시겠습니까?`)) {
+                        return;
+                    }
+                    fetch('/delete_history', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ key: key }), 
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.parentElement.remove();
+                        } else {
+                            alert(`삭제 실패: ${data.error}`);
+                        }
+                    })
+                    .catch(error => alert(`네트워크 오류: ${error}`));
+                });
+            });
+
+            // === [유지] 오답노트 삭제 처리 ===
+            document.querySelectorAll('.btn-delete-odap').forEach(button => {
+                button.addEventListener('click', function() {
+                    const key = this.dataset.key; 
+                    if (!confirm(`오답노트 ${parseInt(key) + 1}번째 기록을 삭제하시겠습니까?`)) {
+                        return;
+                    }
+                    fetch('/delete_odapnote', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ key: key }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.parentElement.remove();
+                        } else {
+                            alert(`삭제 실패: ${data.error}`);
+                        }
+                    })
+                    .catch(error => alert(`네트워크 오류: ${error}`));
+                });
+            });
+
+            // === [유지] 사이드바 접기/펴기 (LocalStorage 로직 포함) ===
+            const toggleLeftBtn = document.getElementById('toggle-left');
+            const toggleRightBtn = document.getElementById('toggle-right');
+            const body = document.body;
+
+            toggleLeftBtn.addEventListener('click', function() {
+                body.classList.toggle('left-collapsed');
+                toggleLeftBtn.textContent = body.classList.contains('left-collapsed') ? '▶' : '▶';
+            });
+
+            toggleRightBtn.addEventListener('click', function() {
+                body.classList.toggle('right-collapsed');
+                toggleRightBtn.textContent = body.classList.contains('right-collapsed') ? '◀' : '▶';
+            });
+
+            try {
+                if (localStorage.getItem('collapseLeftSidebar') === 'true') {
+                    body.classList.add('left-collapsed');
+                    toggleLeftBtn.textContent = '▶';
+                    localStorage.removeItem('collapseLeftSidebar');
+                }
+            } catch (e) {
+                console.warn("LocalStorage 사용 불가: " + e);
+            }
+
+            // === [유지] 전체화면 모드 토글 스크립트 ===
+            const toggleFullscreenBtn = document.getElementById('toggle-fullscreen');
+            
+            toggleFullscreenBtn.addEventListener('click', function() {
+                body.classList.toggle('fullscreen-mode');
+                
+                if (body.classList.contains('fullscreen-mode')) {
+                    toggleFullscreenBtn.textContent = '원래대로';
+                    if (body.classList.contains('left-collapsed')) {
+                        body.classList.remove('left-collapsed');
+                        toggleLeftBtn.textContent = '◀';
+                    }
+                    if (body.classList.contains('right-collapsed')) {
+                        body.classList.remove('right-collapsed');
+                        toggleRightBtn.textContent = '▶';
+                    }
+                } else {
+                    toggleFullscreenBtn.textContent = '전체화면';
+                }
+            });
+
+        }); // End of DOMContentLoaded
+    </script>
+</body>
+</html>
