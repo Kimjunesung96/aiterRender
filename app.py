@@ -25,7 +25,7 @@ LATEX_FIX_INSTRUCTION = "[중요 지시]: 절대로 \\msubGt, \\msubRt 같은 \\
 try:
     import google.generativeai as genai
     # [주의] 배포 환경 변수 또는 여기에 직접 키 입력
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyBh26hfl_c73QcUtrVn6ajjW8endz12Rhw") 
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
     genai.configure(api_key=GEMINI_API_KEY)
     print("✅ Google Gemini API 키 설정 완료.")
 except Exception as e:
