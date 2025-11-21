@@ -12,8 +12,11 @@ data_lock = threading.RLock()
 app.secret_key = 'super-secret-key-please-change-this' 
 
 # LaTeX 수정 지시어
-LATEX_FIX_INSTRUCTION = "[중요 지시]: 절대로 \\msubGt, \\msubRt 같은 \\msub... 코드를 사용하지 마세요. 항상 $G_t$, $R_t$ 처럼 정상적인 LaTeX 수식($...$ 또는 $$...$$)을 사용하세요."
-
+# [!! ★★★ 수정됨 ★★★ !!]
+LATEX_FIX_INSTRUCTION = """[중요 지시]: 
+1. 절대로 \\msubGt 같은 \\msub... 코드를 사용하지 마세요. 
+2. 변수명에 언더바(_)가 들어갈 때는 'next\\_q' 처럼 역슬래시를 붙이지 마세요. 
+3. 반드시 $next_q$ 처럼 수식($...$) 아래첨자로 표현하거나, `next_q` 처럼 코드 포맷을 사용하세요."""
 # ----------------------------
 # [!! 중요 !!] Tesseract 관련 설정 삭제됨
 # ----------------------------
